@@ -1,28 +1,33 @@
-import { NOT_FOUND } from './globalCodes.js';
+import { Logger } from '@kuankuan/log-control';
+import { NOT_FOUND } from './statue.js';
 import { ServerRequest, ServerResponse, ServerResponseCtx } from './types.js';
 export type RouterInfo<Global> = {
   router: Router<Global>;
   matchType: 'root' | 'noMatch';
   matchPart: string;
 };
-export type RouterExecutor<Global> = (
+
+export type RouterExecutor<Global=undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>,
   ctx: ServerResponseCtx,
   next: () => Promise<void>,
   routerInfo: RouterInfo<Global>
 ) => Promise<void>;
-export type RouterExecutorCaller<Global> = (
+export type RouterExecutorCaller<Global=undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>,
   ctx: ServerResponseCtx,
   next: () => Promise<void>
 ) => Promise<void>;
-export type RouterMatcher<Global> = (
+export type RouterMatcher<Global=undefined> = (
   nowPath: string,
   req: ServerRequest<Global>
 ) => Promise<string | boolean> | (string | boolean);
-export default class Router<Global> {
+export type RouterExecutorThis = {
+  logger: Logger;
+};
+export default class Router<Global=undefined> {
   name: string;
   level: number;
   private matcher: RouterMatcher<Global>;
@@ -82,10 +87,10 @@ export default class Router<Global> {
         nowSubRouters = nowSubRouters.concat(await j.match(result, req));
       }
       if (nowSubRouters.length === 0) {
-        console.log(`${this.name}(no match)`);
+        req.logger.trace(`${this.name}(no match)`);
         nowSubRouters.push(async (...args) => {
-          console.log('execute - ', this.name, ' - noMatch');
-          return await this.onNoMatch.call(this, ...args, {
+          req.logger.trace('execute - ' + this.name + ' - noMatch');
+          return await this.onNoMatch.call(void 0, ...args, {
             router: this,
             matchType: 'noMatch',
             matchPart: result,
@@ -94,10 +99,10 @@ export default class Router<Global> {
       }
     } else {
       if (result) {
-        console.log(`${this.name}(root match)`);
+        req.logger.trace(`${this.name}(root match)`);
         nowSubRouters.push(async (...args) => {
-          console.log('execute - ', this.name, ' - rootMatch');
-          return await this.onRootMatch.call(this, ...args, {
+          req.logger.trace('execute - ' + this.name + ' - rootMatch');
+          return await this.onRootMatch.call(void 0, ...args, {
             router: this,
             matchType: 'root',
             matchPart: nowPath,
@@ -107,6 +112,7 @@ export default class Router<Global> {
     }
     return nowSubRouters;
   }
+
   async execute(
     nowPath: string,
     req: ServerRequest<Global>,
@@ -124,12 +130,10 @@ export default class Router<Global> {
         }
       });
     };
-    console.groupCollapsed(`Request routes match (${req.url})`);
     const nowSubRouters = await this.match(nowPath, req);
     let now = -1;
-    console.log('---match finished---');
+    req.logger.trace('match finished. Start execute');
     await next();
-    console.groupEnd();
   }
 }
 

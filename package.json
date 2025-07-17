@@ -1,42 +1,32 @@
 {
   "name": "@kuankuan/k-server",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A simple and easy-to-use server framework for Node.js",
   "main": "dist/index.js",
   "scripts": {
-    "build": "node commands/build.mjs",
-    "start": "node dist/index.js",
-    "dev": "node commands/dev.mjs --dev",
-    "lint": "eslint --fix"
+    "build": "node tools/build.mjs",
+    "lint": "eslint --fix",
+    "test": "npm run build && node tools/test.mjs",
+    "prettier": "prettier --write ."
   },
   "author": "kuankuan",
   "license": "MPL-2.0",
   "devDependencies": {
-    "@kuankuan/eslint-2024": "^1.0.2",
-    "@rushstack/eslint-patch": "^1.10.1",
-    "@types/jsonwebtoken": "^9.0.6",
-    "@types/mysql": "^2.15.26",
-    "@types/node": "^20.14.8",
-    "@types/nodemailer": "^6.4.15",
-    "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.5.0",
-    "@typescript-eslint/parser": "^7.5.0",
-    "esbuild": "^0.20.2",
-    "eslint": "^8.57.0",
-    "typescript": "^5.4.3"
+    "@eslint/js": "^9.31.0",
+    "@types/node": "^24.0.14",
+    "esbuild": "^0.25.6",
+    "eslint": "^9.31.0",
+    "typedoc": "^0.28.7",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.37.0"
   },
   "dependencies": {
-    "@kuankuan/assist-2024": "^2.0.3"
+    "@kuankuan/log-control": "^0.2.2"
   },
   "type": "module",
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": "./dist/index.js",
-    "./*": "./dist/*.js",
-    "./*.*": "./dist/*.*"
-  },
   "keywords": [
     "server",
     "node"

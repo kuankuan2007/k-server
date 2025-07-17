@@ -1,6 +1,6 @@
 import { Duplex, PassThrough, compose } from 'node:stream';
 import { ServerRequest, ServerResponse, Transformer } from './types.js';
-function createResponseTransformer<Global>() {
+function createResponseTransformer<Global=undefined>() {
   const transformers: Record<number, Transformer<Global>[]> = {};
   let transformersList: Transformer<Global>[] = [];
   function sortTransformers() {
