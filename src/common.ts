@@ -13,7 +13,7 @@ type TypeChecker = {
   [key: string]: TypeChecker | ValueChecker;
 };
 export function bodyCheck(value: unknown, typeCheck: TypeChecker | ValueChecker): Promise<boolean> {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
     if (value === null) {
       resolve(false);
       return;
@@ -23,15 +23,15 @@ export function bodyCheck(value: unknown, typeCheck: TypeChecker | ValueChecker)
         resolve(false);
         return;
       }
+      const promises: Promise<boolean>[] = [];
       for (const i in typeCheck) {
-        if (
-          !(await bodyCheck(value[i as keyof typeof value], typeCheck[i as keyof typeof typeCheck]))
-        ) {
-          resolve(false);
-          return;
-        }
+        promises.push(
+          bodyCheck(value[i as keyof typeof value], typeCheck[i as keyof typeof typeCheck])
+        );
       }
-      resolve(true);
+      return Promise.all(promises).then((res) => {
+        resolve(res.every((i) => i));
+      });
     } else if (
       typeof value === 'undefined' &&
       typeof typeCheck === 'string' &&
@@ -47,7 +47,7 @@ export function bodyCheck(value: unknown, typeCheck: TypeChecker | ValueChecker)
         }
       } finally {
         try {
-          resolve(await Promise.resolve(typeCheck(value)));
+          resolve(Promise.resolve(typeCheck(value)));
         } catch {
           resolve(false);
         }
