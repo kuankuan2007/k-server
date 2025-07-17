@@ -27,9 +27,8 @@ function createServer<Global extends object | undefined = undefined>({
     req.ourl = new URL(req.url || '/', 'http://localhost/');
 
     req.uuid = getRandomId();
-    req.logger = loggers.request.createLogger(req.uuid);
-    res.logger = req.logger;
-    loggers.request.info('New Request');
+    req.logger = req.logger = loggers.request.createLogger(req.uuid);
+    loggers.request.info(`New Request: ${req.uuid} ({req.method} ${req.url})`);
     req.global = res.global = setGlobal(req, res);
     let bodyPromise: Promise<Uint8Array> | undefined = void 0;
     req.body = () => {
@@ -47,7 +46,7 @@ function createServer<Global extends object | undefined = undefined>({
       }
       return bodyPromise;
     };
-    
+
     req.json = async () => {
       return JSON.parse(new TextDecoder('utf-8').decode(await req.body()));
     };

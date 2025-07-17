@@ -87,9 +87,9 @@ export default class Router<Global=undefined> {
         nowSubRouters = nowSubRouters.concat(await j.match(result, req));
       }
       if (nowSubRouters.length === 0) {
-        req.logger.trace(`${this.name}(no match)`);
+        req.logger.debug(`${this.name}(no match)`);
         nowSubRouters.push(async (...args) => {
-          req.logger.trace('execute - ' + this.name + ' - noMatch');
+          req.logger.debug('execute - ' + this.name + ' - noMatch');
           return await this.onNoMatch.call(void 0, ...args, {
             router: this,
             matchType: 'noMatch',
@@ -99,9 +99,9 @@ export default class Router<Global=undefined> {
       }
     } else {
       if (result) {
-        req.logger.trace(`${this.name}(root match)`);
+        req.logger.debug(`${this.name}(root match)`);
         nowSubRouters.push(async (...args) => {
-          req.logger.trace('execute - ' + this.name + ' - rootMatch');
+          req.logger.debug('execute - ' + this.name + ' - rootMatch');
           return await this.onRootMatch.call(void 0, ...args, {
             router: this,
             matchType: 'root',
@@ -132,7 +132,7 @@ export default class Router<Global=undefined> {
     };
     const nowSubRouters = await this.match(nowPath, req);
     let now = -1;
-    req.logger.trace('match finished. Start execute');
+    req.logger.debug('match finished. Start execute');
     await next();
   }
 }
