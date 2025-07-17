@@ -31,5 +31,13 @@
   "keywords": [
     "server",
     "node"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kuankuan2007/k-server.git"
+  },
+  "homepage": "https://github.com/kuankuan2007/k-server",
+  "bugs": {
+    "url": "https://github.com/kuankuan2007/k-server/issues"
+  }
 }
