@@ -22,7 +22,7 @@
     "typescript-eslint": "^8.37.0"
   },
   "dependencies": {
-    "@kuankuan/log-control": "^0.2.2"
+    "@kuankuan/log-control": "^0.2.3"
   },
   "type": "module",
   "files": [
