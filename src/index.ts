@@ -1,34 +1,44 @@
 import * as http from 'http';
-import { ServerRequest, ServerResponse, ServerResponseCtx } from './types.js';
+import {
+  ServerRequest,
+  ServerResponse,
+  ServerResponseCtx,
+  Transformer,
+  RequestIdGenerator,
+  logging,
+} from './types.js';
 import Router from './router.js';
 import { Statue } from './statue.js';
 import createResponseTransformer from './transform.js';
 import { Writable } from 'stream';
 import { mergeUInt8Array } from './common.js';
 import getRandomId from './id.js';
-import { logging } from './types.js';
 import { Application } from '@kuankuan/log-control';
 import getAutoCompress from './transformers/autoCompress.js';
 
 function createServer<Global extends object | undefined = undefined>({
   logApplication = new logging.Application({ name: 'server' }),
   setGlobal = () => void 0 as Global,
-  addAutoCompress = true,
+  autoCompressTransformer = getAutoCompress(),
+  server = http.createServer(),
+  requestIdGenerator = getRandomId,
 }: {
   logApplication?: Application;
   setGlobal?: (req: ServerRequest<Global>, res: ServerResponse<Global>) => Global;
-  addAutoCompress?: boolean;
+  autoCompressTransformer?: Transformer<Global>;
+  server?: http.Server;
+  requestIdGenerator?: RequestIdGenerator<Global>;
 } = {}) {
   const responseTransformer = createResponseTransformer<Global>();
-  if (addAutoCompress) {
-    responseTransformer.use(getAutoCompress());
+  if (autoCompressTransformer) {
+    responseTransformer.use(autoCompressTransformer);
   }
   async function onRequest(req: ServerRequest<Global>, res: ServerResponse<Global>) {
     req.ourl = new URL(req.url || '/', 'http://localhost/');
+    req.uuid = requestIdGenerator(req, res);
 
-    req.uuid = getRandomId();
     req.logger = req.logger = loggers.request.createLogger(req.uuid);
-    loggers.request.info(`New Request: ${req.uuid} ({req.method} ${req.url})`);
+    loggers.request.info(`New Request: ${req.uuid} (${req.method} ${req.url})`);
     req.global = res.global = setGlobal(req, res);
     let bodyPromise: Promise<Uint8Array> | undefined = void 0;
     req.body = () => {
@@ -67,6 +77,14 @@ function createServer<Global extends object | undefined = undefined>({
         return result;
       },
     });
+    res.on('finish', () => {
+      req.logger.info(`Response Data Sent`);
+    });
+    res.on('error', (err) => {
+      req.logger.error(
+        `Request Ended By Error: ${err instanceof Error ? err.stack || err.message : String(err)}`
+      );
+    });
     transformerStream.pipe(res);
     try {
       await root.execute(req.ourl.pathname, req, resProxy, ctx);
@@ -90,7 +108,7 @@ function createServer<Global extends object | undefined = undefined>({
         resProxy.end();
       });
     }
-    req.logger.info(`Request Ended: ${ctx.statue.code} ${ctx.statue.msg}`);
+    req.logger.info(`Request processing completed: ${ctx.statue.code} ${ctx.statue.msg}`);
   }
   const loggers = {
     request: logApplication.createLogger('request'),
@@ -116,8 +134,9 @@ function createServer<Global extends object | undefined = undefined>({
   });
 
   root.addRouter(main);
-  const server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse> =
-    http.createServer(onRequest as Parameters<typeof http.createServer>[0]);
+
+  server.on('request', onRequest);
+
   return {
     server,
     routers: {

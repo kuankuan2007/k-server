@@ -37,3 +37,8 @@ export type RequestDecompressor<Global = undefined> = (
 declare module 'stream' {
   function compose(...streams: Duplex[]): Duplex;
 }
+
+export type RequestIdGenerator<Global = undefined> = (
+  req: ServerRequest<Global>,
+  res: ServerResponse<Global>
+) => string;
