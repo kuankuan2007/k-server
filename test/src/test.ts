@@ -1,16 +1,41 @@
-import { createServer, Router } from '../../src';
+import { createServer, Router, Statue } from '../../src';
 import logControl from '@kuankuan/log-control';
 const result = createServer();
+
+const TEST_HOST = '127.0.0.1',
+  TEST_PORT_START = 3000,
+  TEST_PORT_END = 3020;
+
 result.routers.main.addRouter(
   new Router({
     matcher: 'test',
     name: 'main',
     onRootMatch: async (req, res, ctx, next) => {
       ctx.data = 'hello world';
-      req.logger.info('hello world');
-      req.logger.debug('debug');
-      req.logger.warn('warn');
-      result.logApplication.info('info');
+      req.logger.info('hello world from /test router');
+      await next();
+    },
+  })
+);
+result.routers.main.addRouter(
+  new Router({
+    matcher: '400',
+    name: 'main',
+    onRootMatch: async (req, res, ctx, next) => {
+      ctx.data = 'This is a 400 error';
+      ctx.statue = Statue.GONE;
+      req.logger.error('hello world from /400 router');
+      await next();
+    },
+  })
+);
+result.routers.main.addRouter(
+  new Router({
+    matcher: '500',
+    name: 'main',
+    onRootMatch: async (req, res, ctx, next) => {
+      req.logger.error('hello world from /500 router');
+      throw new Error('This is a 500 error'); // ctx.data = 'This is a 500 error';
       await next();
     },
   })
@@ -22,4 +47,28 @@ result.logApplication.addRecorder(
   })
 );
 
-result.server.listen(3000);
+async function listen(server: typeof result.server, port: number) {
+  const { promise, resolve, reject } = Promise.withResolvers<void>();
+  server.once('error', reject);
+  server.once('listening', resolve);
+  server.listen(port, TEST_HOST);
+  return promise.then(() => {
+    testLuncher.info(`Server is listening on ${TEST_HOST}:${port}`);
+  }).finally(() => { 
+    server.removeListener('error', reject);
+    server.removeListener('listening', resolve);
+  });
+}
+const testLuncher = result.logApplication.createLogger('luncher');
+(async () => {
+  for (let i = TEST_PORT_START; i <= TEST_PORT_END; i++) {
+    try {
+      testLuncher.info(`try to listen ${i}`);
+      await listen(result.server, i);
+      return;
+    } catch (err) {
+      testLuncher.warn(`Can not listen ${i} port, Because: ${err.message}`);
+    }
+  }
+  testLuncher.fatal('Can not listen any port!');
+})();
