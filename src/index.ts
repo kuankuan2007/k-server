@@ -6,9 +6,10 @@ import {
   Transformer,
   RequestIdGenerator,
   logging,
+  ResponseSender,
 } from './types.js';
 import Router from './router.js';
-import { Statue } from './statue.js';
+import Statue from './statue.js';
 import createResponseTransformer from './transform.js';
 import { Writable } from 'stream';
 import { mergeUInt8Array } from './common.js';
@@ -16,18 +17,22 @@ import getRandomId from './id.js';
 import { Application } from '@kuankuan/log-control';
 import getAutoCompress from './transformers/autoCompress.js';
 
-function createServer<Global extends object | undefined = undefined>({
+import { bodyOnlySender } from './sender.js';
+
+export function createServer<Global extends object | undefined = undefined>({
   logApplication = new logging.Application({ name: 'server' }),
   setGlobal = () => void 0 as Global,
   autoCompressTransformer = getAutoCompress(),
   server = http.createServer(),
   requestIdGenerator = getRandomId,
+  sender = bodyOnlySender,
 }: {
   logApplication?: Application;
   setGlobal?: (req: ServerRequest<Global>, res: ServerResponse<Global>) => Global;
   autoCompressTransformer?: Transformer<Global>;
   server?: http.Server;
   requestIdGenerator?: RequestIdGenerator<Global>;
+  sender?: ResponseSender<Global>;
 } = {}) {
   const responseTransformer = createResponseTransformer<Global>();
   if (autoCompressTransformer) {
@@ -65,6 +70,7 @@ function createServer<Global extends object | undefined = undefined>({
       statue: new Statue(),
     };
     const transformerStream = responseTransformer.createTransformStream(req, res);
+    let _err: unknown | undefined;
     const resProxy = new Proxy<ServerResponse<Global>>(res, {
       get(target, p) {
         let result: unknown = target[p as keyof ServerResponse<Global>];
@@ -89,24 +95,13 @@ function createServer<Global extends object | undefined = undefined>({
     try {
       await root.execute(req.ourl.pathname, req, resProxy, ctx);
     } catch (err) {
-      ctx.statue = Statue.SERVER_ERROR;
       req.logger.error(
         `Request Ended By Error: ${err instanceof Error ? err.stack || err.message : String(err)}`
       );
+      _err = err;
     }
     if (ctx.statue !== Statue.SENDED) {
-      if (!resProxy.headersSent) {
-        resProxy.setHeader('Content-Type', 'application/json; charset=utf-8');
-      }
-      const data = {
-        code: ctx.statue.code,
-        msg: ctx.statue.msg,
-        ok: ctx.statue.ok,
-        data: ctx.data,
-      };
-      resProxy.write(JSON.stringify(data), () => {
-        resProxy.end();
-      });
+      sender(ctx, _err, req, resProxy);
     }
     req.logger.info(`Request processing completed: ${ctx.statue.code} ${ctx.statue.msg}`);
   }
@@ -147,6 +142,14 @@ function createServer<Global extends object | undefined = undefined>({
     logApplication,
   };
 }
-export default Router;
-export { createServer, Router, Statue };
-export type { ServerRequest, ServerResponse, ServerResponseCtx, Transformer } from './types.js';
+
+export { default as Router, default } from './router.js';
+export { Statue } from './statue.js';
+export { bodyOnlySender, restSender } from './sender.js';
+export type {
+  ServerRequest,
+  ServerResponse,
+  ServerResponseCtx,
+  Transformer,
+  ResponseSender,
+} from './types.js';

@@ -42,3 +42,9 @@ export type RequestIdGenerator<Global = undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
 ) => string;
+export type ResponseSender<Global = undefined> = (
+  ctx: ServerResponseCtx,
+  err: unknown | undefined,
+  req: ServerRequest<Global>,
+  res: ServerResponse<Global>
+) => void;

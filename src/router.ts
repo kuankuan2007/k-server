@@ -1,5 +1,5 @@
 import { Logger } from '@kuankuan/log-control';
-import { NOT_FOUND } from './statue.js';
+import Statue from './statue.js';
 import { ServerRequest, ServerResponse, ServerResponseCtx } from './types.js';
 export type RouterInfo<Global> = {
   router: Router<Global>;
@@ -53,7 +53,7 @@ export default class Router<Global=undefined> {
     this.onNoMatch =
       options.onNoMatch ||
       (async (_req, _res, ctx, next) => {
-        ctx.statue = NOT_FOUND;
+        ctx.statue = Statue.NOT_FOUND;
         await next();
       });
   }
