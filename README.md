@@ -20,13 +20,16 @@ npm install @kuankuan/k-server
 ## Usage
 
 ```ts
-import { createServer, Router } from '@kuankuan/k-server';
+import { createServer, Router, restSender, Statue } from '@kuankuan/k-server';
 import logControl from '@kuankuan/log-control';
 
-const serverInstance = createServer();
+const serverInstance = createServer({
+  sender: restSender, // Set the response sender to `restSender` (it will send the response in REST format)
+});
 
 serverInstance.routers.main.addRouter(
-  new Router({ // Add a new router
+  // Add a new router
+  new Router({
     matcher: 'test', // Auto match the /test path
     name: 'main', // The router name
     onRootMatch: async (req, res, ctx, next) => {
@@ -36,8 +39,32 @@ serverInstance.routers.main.addRouter(
   })
 );
 
+serverInstance.routers.main.addRouter(
+  // Add another route
+  new Router({
+    matcher: 'notfound', // Auto match the /notfound path
+    name: 'notfound', // The router name
+    onRootMatch: async (req, res, ctx, next) => {
+      ctx.statue = Statue.NOT_FOUND; // Set the statue to 404
+      await next(); // Call next hook
+    },
+  })
+);
+
+serverInstance.routers.main.addRouter(
+  // Add the third route
+  new Router({
+    matcher: 'error', // Auto match the /error path
+    name: 'error', // The router name
+    onRootMatch: async (req, res, ctx, next) => {
+      throw new Error('I am a error'); // The sender will send a response as a 500 internal server error
+    },
+  })
+);
+
 serverInstance.logApplication.addRecorder(
-  new logControl.ConsoleRecorder({ // Add a new recorder to the application. ConsoleRecorder is a built-in recorder that outputs logs to the console.
+  // Add a new recorder to the application. ConsoleRecorder is a built-in recorder that outputs logs to the console.
+  new logControl.ConsoleRecorder({
     startLevel: logControl.Level.All, // Control the log level of the recorder to output all logs
   })
 );
