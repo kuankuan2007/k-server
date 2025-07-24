@@ -62,7 +62,7 @@ result.routers.main.addRouter(
 result.routers.main.addRouter(
   new Router({
     matcher: (nowPath) => {
-      return nowPath === '/favicon.ico' || nowPath === '/icon' || nowPath === 'icon.jpg';
+      return nowPath === '/favicon.ico' || nowPath === '/icon' || nowPath === '/icon.jpg';
     },
     name: 'icon',
     onRootMatch: async (req, res, ctx, next) => {
