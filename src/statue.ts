@@ -1,22 +1,35 @@
+import { Readable } from 'stream';
+import { ResponseSender } from './types';
+
 export class Statue {
   readonly code: number;
   readonly msg: string;
   readonly ok: boolean;
-  constructor(code: number = 200, msg: string = '', ok: boolean = true) {
+  readonly specialSender?: ResponseSender<unknown>;
+  constructor(
+    code: number = 200,
+    msg: string = '',
+    ok: boolean = true,
+    specialSender?: ResponseSender<unknown>
+  ) {
     this.code = code;
     this.msg = msg;
     this.ok = ok;
+    this.specialSender = specialSender;
   }
   static readonly CONTINUE = new Statue(100, 'continue', true);
   static readonly SWITCHING_PROTOCOLS = new Statue(101, 'switching protocols', true);
   static readonly PROCESSING = new Statue(102, 'processing', true);
   static readonly EARLY_HINTS = new Statue(103, 'early hints', true);
 
-
   static readonly OK = new Statue(200, 'ok', true);
   static readonly CREATED = new Statue(201, 'created', true);
   static readonly ACCEPTED = new Statue(202, 'accepted', true);
-  static readonly NON_AUTHORITATIVE_INFORMATION = new Statue(203, 'non-authoritative information', true);
+  static readonly NON_AUTHORITATIVE_INFORMATION = new Statue(
+    203,
+    'non-authoritative information',
+    true
+  );
   static readonly NO_CONTENT = new Statue(204, 'no content', true);
   static readonly RESET_CONTENT = new Statue(205, 'reset content', true);
   static readonly PARTIAL_CONTENT = new Statue(206, 'partial content', true);
@@ -40,7 +53,11 @@ export class Statue {
   static readonly NOT_FOUND = new Statue(404, 'not found', false);
   static readonly METHOD_NOT_ALLOWED = new Statue(405, 'method not allowed', false);
   static readonly NOT_ACCEPTABLE = new Statue(406, 'not acceptable', false);
-  static readonly PROXY_AUTHENTICATION_REQUIRED = new Statue(407, 'proxy authentication required', false);
+  static readonly PROXY_AUTHENTICATION_REQUIRED = new Statue(
+    407,
+    'proxy authentication required',
+    false
+  );
   static readonly REQUEST_TIMEOUT = new Statue(408, 'request timeout', false);
   static readonly CONFLICT = new Statue(409, 'conflict', false);
   static readonly GONE = new Statue(410, 'gone', false);
@@ -60,8 +77,16 @@ export class Statue {
   static readonly UPGRADE_REQUIRED = new Statue(426, 'upgrade required', false);
   static readonly PRECONDITION_REQUIRED = new Statue(428, 'precondition required', false);
   static readonly TOO_MANY_REQUESTS = new Statue(429, 'too many requests', false);
-  static readonly REQUEST_HEADER_FIELDS_TOO_LARGE = new Statue(431, 'request header fields too large', false);
-  static readonly UNAVAILABLE_FOR_LEGAL_REASONS = new Statue(451, 'unavailable for legal reasons', false);
+  static readonly REQUEST_HEADER_FIELDS_TOO_LARGE = new Statue(
+    431,
+    'request header fields too large',
+    false
+  );
+  static readonly UNAVAILABLE_FOR_LEGAL_REASONS = new Statue(
+    451,
+    'unavailable for legal reasons',
+    false
+  );
 
   static readonly INTERNAL_SERVER_ERROR = new Statue(500, 'internal server error', false);
   static readonly NOT_IMPLEMENTED = new Statue(501, 'not implemented', false);
@@ -73,9 +98,16 @@ export class Statue {
   static readonly INSUFFICIENT_STORAGE = new Statue(507, 'insufficient storage', false);
   static readonly LOOP_DETECTED = new Statue(508, 'loop detected', false);
   static readonly NOT_EXTENDED = new Statue(510, 'not extended', false);
-  static readonly NETWORK_AUTHENTICATION_REQUIRED = new Statue(511, 'network authentication required', false);
+  static readonly NETWORK_AUTHENTICATION_REQUIRED = new Statue(
+    511,
+    'network authentication required',
+    false
+  );
 
-  static readonly SENDED = new Statue(-1, 'sended', false);
+  static readonly SENDED = new Statue(-1, 'sended', false, () => {});
+  static readonly RAW_STREAM = new Statue(-2, 'raw stream', false, (ctx, _error, _req, res) => {
+    (ctx.data as Readable).pipe(res);
+  });
 }
 
 export default Statue;

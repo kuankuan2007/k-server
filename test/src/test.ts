@@ -1,4 +1,5 @@
 import { createServer, Router, Statue, restSender } from '../../src';
+import fs from 'fs';
 import logControl from '@kuankuan/log-control';
 const result = createServer({
   sender: restSender,
@@ -38,6 +39,49 @@ result.routers.main.addRouter(
     onRootMatch: async (req) => {
       req.logger.info('hello world from /500 router');
       throw new Error('This is a 500 error'); // ctx.data = 'This is a 500 error';
+    },
+  })
+);
+
+result.routers.main.addRouter(
+  new Router({
+    matcher: 'selfcontrol',
+    name: 'selfcontrol',
+    onRootMatch: async (req, res, ctx, next) => {
+      const arg = decodeURIComponent(req.ourl.searchParams.get('arg') || '');
+      ctx.statue = Statue.SENDED;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', 'inline');
+      res.statusCode = 200;
+      res.end(Buffer.from(`Hello, ${arg}!\nThis is a self-control response.`, 'utf-8'));
+      await next();
+    },
+  })
+);
+
+result.routers.main.addRouter(
+  new Router({
+    matcher: (nowPath) => {
+      return nowPath === '/favicon.ico' || nowPath === '/icon' || nowPath === 'icon.jpg';
+    },
+    name: 'icon',
+    onRootMatch: async (req, res, ctx, next) => {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'image/jpeg');
+      ctx.statue = Statue.RAW_STREAM;
+      ctx.data = fs.createReadStream('./test/icon.jpg');
+      await next();
+    },
+  })
+);
+
+result.routers.main.addRouter(
+  new Router({
+    matcher: 'bytes',
+    name: 'bytes',
+    onRootMatch: async (req, res, ctx, next) => {
+      ctx.data = new Uint8Array([75, 117, 97, 110, 107, 117, 97, 110]);
+      await next();
     },
   })
 );

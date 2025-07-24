@@ -100,9 +100,8 @@ export function createServer<Global extends object | undefined = undefined>({
       );
       _err = err;
     }
-    if (ctx.statue !== Statue.SENDED) {
-      sender(ctx, _err, req, resProxy);
-    }
+    const _sender = ctx.statue.specialSender || sender;
+    _sender(ctx, _err, req, resProxy);
     req.logger.info(`Request processing completed: ${ctx.statue.code} ${ctx.statue.msg}`);
   }
   const loggers = {
@@ -143,7 +142,7 @@ export function createServer<Global extends object | undefined = undefined>({
   };
 }
 
-export { default as Router, default } from './router.js';
+export { default as Router, default, matchTop } from './router.js';
 export { Statue } from './statue.js';
 export { bodyOnlySender, restSender } from './sender.js';
 export type {
