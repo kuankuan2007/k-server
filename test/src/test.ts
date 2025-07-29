@@ -11,8 +11,21 @@ const TEST_HOST = '127.0.0.1',
 
 result.routers.main.addRouter(
   new Router({
+    name: 'index',
+    matcher: '',
+    onRootMatch: async (req, res, ctx, next) => {
+      req.logger.trace('index root match');
+      ctx.statue = Statue.RAW_STREAM;
+      ctx.data = fs.createReadStream('./test/index.html');
+      await next();
+    },
+  })
+);
+
+result.routers.main.addRouter(
+  new Router({
     matcher: 'test',
-    name: 'main',
+    name: 'test',
     onRootMatch: async (req, _res, ctx, next) => {
       ctx.data = 'hello world';
       req.logger.info('hello world from /test router');
@@ -23,7 +36,7 @@ result.routers.main.addRouter(
 result.routers.main.addRouter(
   new Router({
     matcher: '400',
-    name: 'main',
+    name: 'notFound',
     onRootMatch: async (req, _res, ctx, next) => {
       ctx.data = 'This is a 400 error';
       ctx.statue = Statue.NOT_FOUND;
@@ -35,7 +48,7 @@ result.routers.main.addRouter(
 result.routers.main.addRouter(
   new Router({
     matcher: '500',
-    name: 'main',
+    name: 'serverError',
     onRootMatch: async (req) => {
       req.logger.info('hello world from /500 router');
       throw new Error('This is a 500 error'); // ctx.data = 'This is a 500 error';

@@ -110,10 +110,6 @@ export function createServer<Global extends object | undefined = undefined>({
   } as const;
   const main = new Router<Global>({
     name: 'main',
-    matcher: (nowPath) => {
-      if (nowPath === '/') return true;
-      return nowPath;
-    },
     onRootMatch: async (_req, res, ctx) => {
       res.statusCode = 404;
       ctx.statue = Statue.NOT_FOUND;
