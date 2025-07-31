@@ -7,7 +7,7 @@ const rootPath = path.resolve(process.cwd());
 (async () => {
   const tsconfig = path.resolve(rootPath, './tsconfig.json');
   await esbuild.build({
-    entryPoints: [path.resolve(rootPath, './test/src/test.ts')],
+    entryPoints: [path.resolve(rootPath, './test/src/index.ts')],
     tsconfig: tsconfig,
     outdir: path.resolve(rootPath, './test/dist'),
     bundle: true,
@@ -15,7 +15,7 @@ const rootPath = path.resolve(process.cwd());
     target: 'node21',
     format: 'esm',
     sourcemap: true,
-    outExtension: { '.js': '.js' },
+    outExtension: { '.js': '.mjs' },
   });
-  await import('../test/dist/test.js');
+  await import('../test/dist/index.mjs');
 })();

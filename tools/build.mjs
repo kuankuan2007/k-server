@@ -37,7 +37,6 @@ async function dfsFiles(now) {
     platform: 'node',
     target: 'node21',
     format: 'esm',
-    sourcemap: true,
     outExtension: { '.js': '.js' },
   });
 })();
