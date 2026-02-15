@@ -110,13 +110,11 @@ export function createServer<Global extends object | undefined = undefined>({
   } as const;
   const main = new Router<Global>({
     name: 'main',
-    onRootMatch: async (_req, res, ctx) => {
-      res.statusCode = 404;
-      ctx.statue = Statue.NOT_FOUND;
+    onRootMatch: async (statue) => {
+      statue.ctx.statue = Statue.NOT_FOUND;
     },
-    onNoMatch: async (_req, res, ctx) => {
-      res.statusCode = 404;
-      ctx.statue = Statue.NOT_FOUND;
+    onNoMatch: async (statue) => {
+      statue.ctx.statue = Statue.NOT_FOUND;
     },
   });
   const root = new Router<Global>({

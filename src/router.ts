@@ -4,20 +4,23 @@ export type RouterInfo<Global = undefined> = {
   matchType: 'root' | 'noMatch';
   matchPart: string;
 };
-
+export type RouterExecutorFlags = {
+  termination?: boolean;
+  [key: string]: unknown;
+};
 export type RouterExecutor<Global = undefined> = (statue: {
   req: ServerRequest<Global>;
   res: ServerResponse<Global>;
   ctx: ServerResponseCtx;
   next: () => Promise<void>;
   routerInfo: RouterInfo<Global>;
+  flags: RouterExecutorFlags;
 }) => Promise<void>;
-export type RouterExecutorCaller<Global = undefined> = (statue: {
-  req: ServerRequest<Global>;
-  res: ServerResponse<Global>;
-  ctx: ServerResponseCtx;
-  next: () => Promise<void>;
-}) => Promise<void>;
+
+export type RouterMatchResult<Global = undefined> = {
+  caller: RouterExecutor<Global>;
+  info: RouterInfo<Global>;
+};
 export type RouterMatcher<Global = undefined> = (
   nowPath: string,
   req: ServerRequest<Global>
@@ -66,32 +69,24 @@ export default class Router<Global = undefined> {
       }
     }
   }
-  async match(
-    nowPath: string,
-    req: ServerRequest<Global>
-  ): Promise<RouterExecutorCaller<Global>[]> {
+  async match(nowPath: string, req: ServerRequest<Global>): Promise<RouterMatchResult<Global>[]> {
     const result = await Promise.resolve(this.matcher(nowPath, req));
-    const matchPromises: Promise<RouterExecutorCaller<Global>[]>[] = [];
+    const matchPromises: Promise<RouterMatchResult<Global>[]>[] = [];
     if (typeof result === 'string') {
       for (const j of this.subRoutersList) {
         matchPromises.push(j.match(result, req));
       }
       const results = await Promise.all(matchPromises);
-      const nowSubRouters: RouterExecutorCaller<Global>[] = results.flat();
+      const nowSubRouters: RouterMatchResult<Global>[] = results.flat();
       if (nowSubRouters.length === 0) {
         req.logger.debug(`${this.name}(no match)`);
-        nowSubRouters.push(async (statue) => {
-          req.logger.debug('execute - ' + this.name + ' - noMatch');
-          return await this.onNoMatch.call(
-            void 0,
-            Object.assign(statue, {
-              routerInfo: {
-                router: this,
-                matchType: 'noMatch',
-                matchPart: nowPath,
-              } as RouterInfo<Global>,
-            })
-          );
+        nowSubRouters.push({
+          caller: this.onNoMatch,
+          info: {
+            router: this,
+            matchType: 'noMatch',
+            matchPart: nowPath,
+          },
         });
       }
       return nowSubRouters;
@@ -99,18 +94,13 @@ export default class Router<Global = undefined> {
     if (result) {
       req.logger.debug(`${this.name}(root match)`);
       return [
-        async (statue) => {
-          req.logger.debug('execute - ' + this.name + ' - rootMatch');
-          return await this.onRootMatch.call(
-            void 0,
-            Object.assign(statue, {
-              routerInfo: {
-                router: this,
-                matchType: 'root',
-                matchPart: nowPath,
-              } as RouterInfo<Global>,
-            })
-          );
+        {
+          info: {
+            router: this,
+            matchType: 'root',
+            matchPart: nowPath,
+          },
+          caller: this.onRootMatch,
         },
       ];
     }
@@ -123,21 +113,37 @@ export default class Router<Global = undefined> {
     res: ServerResponse<Global>,
     ctx: ServerResponseCtx
   ): Promise<void> {
-    const next = () => {
+    function _callExecutor(executor: RouterMatchResult<Global>) {
+      req.logger.debug('execute - ' + executor.info.router.name + ' - ' + executor.info.matchType);
+      let nextCalled = false;
+      const nowNext = () => {
+        nextCalled = true;
+        return _next();
+      };
+      const flags: RouterExecutorFlags = {};
+      return Promise.resolve(
+        executor.caller({ req, res, ctx, next: nowNext, routerInfo: executor.info, flags })
+      ).then(() => {
+        if (!nextCalled && !flags.termination) {
+          return nowNext();
+        }
+      });
+    }
+    const _next = () => {
       return new Promise<void>((resolve, reject) => {
         now++;
         if (nowSubRouters.length <= now) {
           resolve();
           return;
         } else {
-          nowSubRouters[now]({req, res, ctx, next}).then(resolve, reject);
+          _callExecutor(nowSubRouters[now]).then(resolve, reject);
         }
       });
     };
     const nowSubRouters = await this.match(nowPath, req);
     let now = -1;
     req.logger.debug('match finished. Start execute');
-    await next();
+    return _next();
   }
 }
 
