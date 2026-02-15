@@ -127,7 +127,9 @@ const testLuncher = result.logApplication.createLogger('luncher');
       await listen(result.server, i);
       return;
     } catch (err) {
-      testLuncher.warn(`Can not listen ${i} port, Because: ${err.message}`);
+      testLuncher.warn(
+        `Can not listen ${i} port, Because: ${(err as Error).message ?? String(err)}`
+      );
     }
   }
   testLuncher.fatal('Can not listen any port!');

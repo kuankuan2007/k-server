@@ -2,15 +2,16 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "module": "ESNext",
+    "module": "nodenext",
     "lib": ["ESNext"],
     "skipLibCheck": true,
+    "rootDir": "./",
     "outDir": "dist",
     "declaration": true,
     "emitDeclarationOnly": false,
 
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
@@ -22,7 +23,8 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"]
 }
