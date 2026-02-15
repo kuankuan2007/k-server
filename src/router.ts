@@ -1,31 +1,28 @@
-import { Logger } from '@kuankuan/log-control';
 import { ServerRequest, ServerResponse, ServerResponseCtx } from './types.js';
-export type RouterInfo<Global> = {
+export type RouterInfo<Global = undefined> = {
   router: Router<Global>;
   matchType: 'root' | 'noMatch';
   matchPart: string;
 };
 
-export type RouterExecutor<Global = undefined> = (
-  req: ServerRequest<Global>,
-  res: ServerResponse<Global>,
-  ctx: ServerResponseCtx,
-  next: () => Promise<void>,
-  routerInfo: RouterInfo<Global>
-) => Promise<void>;
-export type RouterExecutorCaller<Global = undefined> = (
-  req: ServerRequest<Global>,
-  res: ServerResponse<Global>,
-  ctx: ServerResponseCtx,
-  next: () => Promise<void>
-) => Promise<void>;
+export type RouterExecutor<Global = undefined> = (statue: {
+  req: ServerRequest<Global>;
+  res: ServerResponse<Global>;
+  ctx: ServerResponseCtx;
+  next: () => Promise<void>;
+  routerInfo: RouterInfo<Global>;
+}) => Promise<void>;
+export type RouterExecutorCaller<Global = undefined> = (statue: {
+  req: ServerRequest<Global>;
+  res: ServerResponse<Global>;
+  ctx: ServerResponseCtx;
+  next: () => Promise<void>;
+}) => Promise<void>;
 export type RouterMatcher<Global = undefined> = (
   nowPath: string,
   req: ServerRequest<Global>
 ) => Promise<string | boolean> | (string | boolean);
-export type RouterExecutorThis = {
-  logger: Logger;
-};
+
 export default class Router<Global = undefined> {
   name: string;
   level: number;
@@ -83,13 +80,18 @@ export default class Router<Global = undefined> {
       const nowSubRouters: RouterExecutorCaller<Global>[] = results.flat();
       if (nowSubRouters.length === 0) {
         req.logger.debug(`${this.name}(no match)`);
-        nowSubRouters.push(async (...args) => {
+        nowSubRouters.push(async (statue) => {
           req.logger.debug('execute - ' + this.name + ' - noMatch');
-          return await this.onNoMatch.call(void 0, ...args, {
-            router: this,
-            matchType: 'noMatch',
-            matchPart: result,
-          });
+          return await this.onNoMatch.call(
+            void 0,
+            Object.assign(statue, {
+              routerInfo: {
+                router: this,
+                matchType: 'noMatch',
+                matchPart: nowPath,
+              } as RouterInfo<Global>,
+            })
+          );
         });
       }
       return nowSubRouters;
@@ -97,13 +99,18 @@ export default class Router<Global = undefined> {
     if (result) {
       req.logger.debug(`${this.name}(root match)`);
       return [
-        async (...args) => {
+        async (statue) => {
           req.logger.debug('execute - ' + this.name + ' - rootMatch');
-          return await this.onRootMatch.call(void 0, ...args, {
-            router: this,
-            matchType: 'root',
-            matchPart: nowPath,
-          });
+          return await this.onRootMatch.call(
+            void 0,
+            Object.assign(statue, {
+              routerInfo: {
+                router: this,
+                matchType: 'root',
+                matchPart: nowPath,
+              } as RouterInfo<Global>,
+            })
+          );
         },
       ];
     }
@@ -123,7 +130,7 @@ export default class Router<Global = undefined> {
           resolve();
           return;
         } else {
-          nowSubRouters[now](req, res, ctx, next).then(resolve, reject);
+          nowSubRouters[now]({req, res, ctx, next}).then(resolve, reject);
         }
       });
     };
