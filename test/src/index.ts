@@ -13,11 +13,10 @@ result.routers.main.addRouter(
   new Router({
     name: 'index',
     matcher: '',
-    onRootMatch: async (req, res, ctx, next) => {
-      req.logger.trace('index root match');
-      ctx.statue = Statue.RAW_STREAM;
-      ctx.data = fs.createReadStream('./test/index.html');
-      await next();
+    onRootMatch: async (statue) => {
+      statue.req.logger.trace('index root match');
+      statue.ctx.statue = Statue.RAW_STREAM;
+      statue.ctx.data = fs.createReadStream('./test/index.html');
     },
   })
 );
@@ -26,10 +25,9 @@ result.routers.main.addRouter(
   new Router({
     matcher: 'test',
     name: 'test',
-    onRootMatch: async (req, _res, ctx, next) => {
-      ctx.data = 'hello world';
-      req.logger.info('hello world from /test router');
-      await next();
+    onRootMatch: async (statue) => {
+      statue.ctx.data = 'hello world';
+      statue.req.logger.info('hello world from /test router');
     },
   })
 );
@@ -37,11 +35,10 @@ result.routers.main.addRouter(
   new Router({
     matcher: '400',
     name: 'notFound',
-    onRootMatch: async (req, _res, ctx, next) => {
-      ctx.data = 'This is a 400 error';
-      ctx.statue = Statue.NOT_FOUND;
-      req.logger.info('hello world from /400 router');
-      await next();
+    onRootMatch: async (statue) => {
+      statue.ctx.data = 'This is a 400 error';
+      statue.ctx.statue = Statue.NOT_FOUND;
+      statue.req.logger.info('hello world from /400 router');
     },
   })
 );
@@ -49,8 +46,8 @@ result.routers.main.addRouter(
   new Router({
     matcher: '500',
     name: 'serverError',
-    onRootMatch: async (req) => {
-      req.logger.info('hello world from /500 router');
+    onRootMatch: async (statue) => {
+      statue.req.logger.info('hello world from /500 router');
       throw new Error('This is a 500 error'); // ctx.data = 'This is a 500 error';
     },
   })
@@ -60,14 +57,13 @@ result.routers.main.addRouter(
   new Router({
     matcher: 'selfcontrol',
     name: 'selfcontrol',
-    onRootMatch: async (req, res, ctx, next) => {
-      const arg = decodeURIComponent(req.ourl.searchParams.get('arg') || '');
-      ctx.statue = Statue.SENDED;
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Content-Disposition', 'inline');
-      res.statusCode = 200;
-      res.end(Buffer.from(`Hello, ${arg}!\nThis is a self-control response.`, 'utf-8'));
-      await next();
+    onRootMatch: async (statue) => {
+      const arg = decodeURIComponent(statue.req.ourl.searchParams.get('arg') || '');
+      statue.ctx.statue = Statue.SENDED;
+      statue.res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      statue.res.setHeader('Content-Disposition', 'inline');
+      statue.res.statusCode = 200;
+      statue.res.end(Buffer.from(`Hello, ${arg}!\nThis is a self-control response.`, 'utf-8'));
     },
   })
 );
@@ -78,12 +74,11 @@ result.routers.main.addRouter(
       return nowPath === '/favicon.ico' || nowPath === '/icon' || nowPath === '/icon.jpg';
     },
     name: 'icon',
-    onRootMatch: async (req, res, ctx, next) => {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'image/jpeg');
-      ctx.statue = Statue.RAW_STREAM;
-      ctx.data = fs.createReadStream('./test/icon.jpg');
-      await next();
+    onRootMatch: async (statue) => {
+      statue.res.statusCode = 200;
+      statue.res.setHeader('Content-Type', 'image/jpeg');
+      statue.ctx.statue = Statue.RAW_STREAM;
+      statue.ctx.data = fs.createReadStream('./test/icon.jpg');
     },
   })
 );
@@ -92,9 +87,9 @@ result.routers.main.addRouter(
   new Router({
     matcher: 'bytes',
     name: 'bytes',
-    onRootMatch: async (req, res, ctx, next) => {
-      ctx.data = new Uint8Array([75, 117, 97, 110, 107, 117, 97, 110]);
-      await next();
+    onRootMatch: async (statue) => {
+      statue.ctx.data = new Uint8Array([75, 117, 97, 110, 107, 117, 97, 110]);
+      statue.ctx.statue = Statue.SENDED;
     },
   })
 );
