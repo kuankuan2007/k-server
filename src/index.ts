@@ -40,10 +40,10 @@ export function createServer<Global extends object | undefined = undefined>({
   }
   async function onRequest(req: ServerRequest<Global>, res: ServerResponse<Global>) {
     req.ourl = new URL(req.url || '/', 'http://localhost/');
-    req.uuid = requestIdGenerator(req, res);
+    req.requestId = requestIdGenerator(req, res);
 
-    req.logger = req.logger = loggers.request.createLogger(req.uuid);
-    loggers.request.info(`New Request: ${req.uuid} (${req.method} ${req.url})`);
+    req.logger = req.logger = loggers.request.createLogger(req.requestId);
+    loggers.request.info(`New Request: ${req.requestId} (${req.method} ${req.url})`);
     req.global = res.global = setGlobal(req, res);
     let bodyPromise: Promise<Uint8Array> | undefined = void 0;
     req.body = () => {

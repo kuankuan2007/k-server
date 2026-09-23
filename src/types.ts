@@ -11,7 +11,7 @@ export type ServerRequest<Global = undefined> = IncomingMessage & {
   text: () => Promise<string>;
   json: () => Promise<unknown>;
   global: Global;
-  uuid: string;
+  requestId: string;
   logger: Logger;
 };
 export type ServerResponse<Global = undefined> = SR & {
