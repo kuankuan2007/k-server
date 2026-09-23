@@ -40,5 +40,6 @@
   "homepage": "https://github.com/kuankuan2007/k-server",
   "bugs": {
     "url": "https://github.com/kuankuan2007/k-server/issues"
-  }
+  },
+  "packageManager": "pnpm@12.5.1"
 }
