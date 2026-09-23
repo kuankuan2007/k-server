@@ -1,6 +1,6 @@
 import { createGzip, createDeflate, createBrotliCompress, createZstdCompress } from 'zlib';
 import { Duplex } from 'stream';
-import { ServerRequest, ServerResponse, Transformer } from '@/types';
+import { ServerRequest, ServerResponse, Transformer } from '@/types.js';
 
 const defaultEncodeings = Object.assign(Object.create(null), {
   gzip: () => createGzip({ level: 6 }),

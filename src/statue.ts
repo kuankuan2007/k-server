@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { ResponseSender } from './types';
+import { ResponseSender } from './types.js';
 
 export class Statue {
   readonly code: number;

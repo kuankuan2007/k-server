@@ -1,5 +1,5 @@
 import { isTypedArray } from 'util/types';
-import { ResponseSender } from './types';
+import { ResponseSender } from './types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function writeableDataTransform(data: any) {
