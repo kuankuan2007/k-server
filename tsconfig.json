@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/filesystem/index.ts.ignore"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
