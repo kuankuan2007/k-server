@@ -37,7 +37,7 @@ export type RouterBaseConstructorOptions = {
 export abstract class RouterBase<Global = undefined> {
   readonly name: string;
   readonly level: number;
-  constructor (options: RouterBaseConstructorOptions) {
+  constructor(options: RouterBaseConstructorOptions) {
     this.name = options.name;
     this.level = options.level || 0;
   }
@@ -50,21 +50,22 @@ export abstract class RouterBase<Global = undefined> {
     res: ServerResponse<Global>,
     ctx: ServerResponseCtx
   ): Promise<void> {
-    function _callExecutor(executor: RouterMatchResult<Global>) {
-      req.logger.debug('execute - ' + executor.info.router.name + ' - ' + executor.info.matchType);
+    async function _callExecutor(matchResult: RouterMatchResult<Global>) {
+      req.logger.debug(
+        'execute - ' + matchResult.info.router.name + ' - ' + matchResult.info.matchType
+      );
       let nextCalled = false;
       const nowNext = () => {
         nextCalled = true;
         return _next();
       };
       const flags: RouterExecutorFlags = {};
-      return Promise.resolve(
-        executor.caller({ req, res, ctx, next: nowNext, routerInfo: executor.info, flags })
-      ).then(() => {
-        if (!nextCalled && !flags.termination) {
-          return nowNext();
-        }
-      });
+      await Promise.resolve(
+        matchResult.caller({ req, res, ctx, next: nowNext, routerInfo: matchResult.info, flags })
+      );
+      if (!nextCalled && !flags.termination) {
+        return nowNext();
+      }
     }
     const _next = () => {
       return new Promise<void>((resolve, reject) => {
@@ -96,7 +97,9 @@ export default class Router<Global = undefined> extends RouterBase<Global> {
     onNoMatch?: RouterExecutor<Global>;
   }>;
   protected readonly _matcher: RouterMatcher<Global>;
-  constructor (options: {
+  readonly onRootMatch: (status: RouterExecutorStatus<Global>) => Promise<void>;
+  readonly onNoMatch: (status: RouterExecutorStatus<Global>) => Promise<void>;
+  constructor(options: {
     name: string;
     level?: number;
     matcher?: RouterMatcher<Global> | string;
@@ -116,6 +119,8 @@ export default class Router<Global = undefined> extends RouterBase<Global> {
     } else {
       this._matcher = (s) => s;
     }
+    this.onRootMatch = this._onRootMatch.bind(this);
+    this.onNoMatch = this._onNoMatch.bind(this);
   }
 
   readonly subRouters: { [key: string]: RouterBase<Global>[] } = {};
@@ -180,14 +185,14 @@ export default class Router<Global = undefined> extends RouterBase<Global> {
   async matcher(nowPath: string, req: ServerRequest<Global>): Promise<string | boolean> {
     return this._matcher(nowPath, req);
   }
-  async onRootMatch(status: RouterExecutorStatus<Global>): Promise<void> {
+  async _onRootMatch(status: RouterExecutorStatus<Global>): Promise<void> {
     if (this.options.onRootMatch) {
-      return this.options.onRootMatch(status);
+      return this.options.onRootMatch.call(this, status);
     }
   }
-  async onNoMatch(status: RouterExecutorStatus<Global>): Promise<void> {
+  async _onNoMatch(status: RouterExecutorStatus<Global>): Promise<void> {
     if (this.options.onNoMatch) {
-      return this.options.onNoMatch(status);
+      return this.options.onNoMatch.call(this, status);
     }
   }
 }
