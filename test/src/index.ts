@@ -1,8 +1,18 @@
-import { createServer, Router, Statue, restSender } from '../../src';
+import { createServer, Router, Statue, restSender } from '../../src/index.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
+
+import { WebSocketServer } from 'ws';
+
 const result = createServer({
   sender: restSender,
+});
+
+const wsLogger = result.logApplication.createLogger('ws');
+
+const wss = new WebSocketServer({
+  server: result.server,
+  path: '/websocket',
 });
 
 const TEST_HOST = '127.0.0.1',
@@ -17,6 +27,18 @@ result.routers.main.addRouter(
       statue.req.logger.trace('index root match');
       statue.ctx.statue = Statue.RAW_STREAM;
       statue.ctx.data = fs.createReadStream('./test/index.html');
+    },
+  })
+);
+
+result.routers.main.addRouter(
+  new Router({
+    name: 'ws.html',
+    matcher: 'ws.html',
+    onRootMatch: async (statue) => {
+      statue.req.logger.trace('ws.html root match');
+      statue.ctx.statue = Statue.RAW_STREAM;
+      statue.ctx.data = fs.createReadStream('./test/ws.html');
     },
   })
 );
@@ -100,6 +122,14 @@ result.logApplication.addRecorder(
   })
 );
 
+wss.on('connection', (ws) => {
+  wsLogger.info(`new connection: ${ws.url}`);
+  ws.on('message', (message) => {
+    wsLogger.info(`Received message: ${message}`);
+    ws.send(`Echo: ${message}`);
+  });
+});
+
 async function listen(server: typeof result.server, port: number) {
   const { promise, resolve, reject } = Promise.withResolvers<void>();
   server.once('error', reject);
@@ -122,7 +152,9 @@ const testLuncher = result.logApplication.createLogger('luncher');
       await listen(result.server, i);
       return;
     } catch (err) {
-      testLuncher.warn(`Can not listen ${i} port, Because: ${err.message}`);
+      testLuncher.warn(
+        `Can not listen ${i} port, Because: ${err instanceof Error ? err.message : err}`
+      );
     }
   }
   testLuncher.fatal('Can not listen any port!');

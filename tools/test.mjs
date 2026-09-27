@@ -11,6 +11,7 @@ const rootPath = path.resolve(process.cwd());
     tsconfig: tsconfig,
     outdir: path.resolve(rootPath, './test/dist'),
     bundle: true,
+    packages: 'external',
     platform: 'node',
     target: 'node21',
     format: 'esm',

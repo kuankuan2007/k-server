@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/icon.jpg" />
+    <title>WebSocket Test</title>
+    <style>
+      #ws-messages {
+        list-style-type: none;
+        padding: 0;
+      }
+      #ws-messages li.sent::before {
+        content: "> ";
+        font-weight: bold;
+      }
+      #ws-messages li.received::before {
+        content: "< ";
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebSocket Test</h1>
+    <div id="ws-container">
+      <p id="ws-status">Status: <span id="ws-status-text">Disconnected</span></p>
+      <ul id="ws-messages"></ul>
+      <form id="message-form">
+        <input disabled required type="text" id="ws-input" placeholder="Type a message..." value="Hello WebSocket!" />
+        <button disabled type="submit" id="ws-send-btn">Send</button>
+      </form>
+    </div>
+    <script>
+      const ws = new WebSocket('/websocket');
+      document.getElementById('message-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const message = document.getElementById('ws-input').value;
+        ws.send(message);
+        document.getElementById('ws-input').value = '';
+        const li = document.createElement('li');
+        li.textContent = message;
+        li.classList.add('sent');
+        document.getElementById('ws-messages').appendChild(li);
+      });
+      ws.onopen = () => {
+        console.log('WebSocket connected!');
+        document.getElementById('ws-status-text').textContent = 'Connected';
+        document.getElementById('ws-input').disabled = false;
+        document.getElementById('ws-send-btn').disabled = false;
+      };
+      ws.onmessage = (event) => {
+        const li = document.createElement('li');
+        li.textContent = event.data;
+        li.classList.add('received');
+        document.getElementById('ws-messages').appendChild(li);
+      };
+      ws.onclose = () => {
+        console.log('WebSocket disconnected!');
+        document.getElementById('ws-status-text').textContent = 'Disconnected';
+        document.getElementById('ws-input').disabled = true;
+        document.getElementById('ws-send-btn').disabled = true;
+      };
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        document.getElementById('ws-status-text').textContent = 'Error: ' + error.message;
+        document.getElementById('ws-input').disabled = true;
+        document.getElementById('ws-send-btn').disabled = true;
+      };
+    </script>
+  </body>
+</html>
