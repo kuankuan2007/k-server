@@ -37,6 +37,16 @@ async function dfsFiles(now) {
     platform: 'node',
     target: 'node21',
     format: 'esm',
-    outExtension: { '.js': '.js' },
+    outExtension: { '.js': '.mjs' },
+  });
+  await esbuild.build({
+    entryPoints,
+    tsconfig: tsconfig,
+    outdir,
+    bundle: true,
+    platform: 'node',
+    target: 'node21',
+    format: 'cjs',
+    outExtension: { '.js': '.cjs' },
   });
 })();

@@ -2,24 +2,24 @@
   "name": "@kuankuan/k-server",
   "version": "2.0.0-beta.1",
   "description": "A simple and easy-to-use server framework for Node.js",
-  "main": "dist/index.js",
   "scripts": {
     "build": "node tools/build.mjs",
     "lint:fix": "eslint src/**/* --fix",
     "lint": "eslint src/**/*",
     "test": "npm run build && node tools/test.mjs",
     "prettier": "prettier --write .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc -p test/tsconfig.json",
+    "type-build": "tsc"
   },
   "author": "kuankuan",
   "license": "MPL-2.0",
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
-    "@types/node": "^24.0.14",
-    "esbuild": "^0.25.6",
-    "eslint": "^9.31.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
     "typedoc": "^0.28.7",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.37.0"
   },
   "dependencies": {
@@ -40,6 +40,23 @@
   "homepage": "https://github.com/kuankuan2007/k-server",
   "bugs": {
     "url": "https://github.com/kuankuan2007/k-server/issues"
+  },
+  "main": "dist/index.mjs",
+  "types": "types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "iife": "./dist/index.iife.min.js"
+    },
+    "./*": {
+      "import": "./dist/*.mjs",
+      "require": "./dist/*.cjs",
+      "default": "./dist/*.mjs",
+      "types": "./dist/*.d.ts"
+    }
   },
   "packageManager": "pnpm@12.5.1"
 }

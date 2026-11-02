@@ -1,4 +1,4 @@
-import { createServer, Router, Statue, restSender } from '../../src';
+import { createServer, Router, Statue, restSender } from '../../src/index.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
 const result = createServer({
@@ -122,7 +122,7 @@ const testLuncher = result.logApplication.createLogger('luncher');
       await listen(result.server, i);
       return;
     } catch (err) {
-      testLuncher.warn(`Can not listen ${i} port, Because: ${err.message}`);
+      testLuncher.warn(`Can not listen ${i} port, Because: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   testLuncher.fatal('Can not listen any port!');
