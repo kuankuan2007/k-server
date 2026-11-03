@@ -15,7 +15,6 @@ import { Writable } from 'stream';
 import { mergeUInt8Array } from './common.js';
 import getRandomId from './id.js';
 import { Application } from '@kuankuan/log-control';
-import getAutoCompress from './transformers/autoCompress.js';
 import { type Logger } from '@kuankuan/log-control';
 import { bodyOnlySender } from './sender.js';
 import { executeRouter } from './router.js';
@@ -32,7 +31,7 @@ export enum RequestErrorStage {
 export type ServerOptions<Global extends object | undefined = undefined> = {
   logApplication?: Application;
   setGlobal?: (req: ServerRequest<Global>, res: ServerResponse<Global>) => Global;
-  autoCompressTransformer?: Transformer<Global>;
+  responseTransformers?: Transformer<Global>[];
   server?: http.Server;
   requestIdGenerator?: RequestIdGenerator<Global>;
   sender?: ResponseSender<Global>;
@@ -50,7 +49,7 @@ export type ServerOptions<Global extends object | undefined = undefined> = {
 export function createServer<Global extends object | undefined = undefined>({
   logApplication = new logging.Application({ name: 'server' }),
   setGlobal = () => void 0 as Global,
-  autoCompressTransformer = getAutoCompress(),
+  responseTransformers: responseTransformer = [],
   server = http.createServer(),
   requestIdGenerator = getRandomId,
   sender = bodyOnlySender,
@@ -65,9 +64,7 @@ export function createServer<Global extends object | undefined = undefined>({
     await sender(ctx, req, res);
   },
 }: ServerOptions<Global> = {}) {
-  const responseTransformer = new TransformerPipeline<Global>(
-    autoCompressTransformer ? [autoCompressTransformer] : []
-  );
+  const responseTransformerPipeline = new TransformerPipeline<Global>(responseTransformer ?? []);
 
   async function onRequest(req: ServerRequest<Global>, res: ServerResponse<Global>) {
     const ctx: ServerResponseCtx = {
@@ -131,7 +128,7 @@ export function createServer<Global extends object | undefined = undefined>({
       };
       let transformerPipelineWrapper: TransformStreamPipelineWrapper | undefined = void 0;
       try {
-        transformerPipelineWrapper = responseTransformer.createTransformStream(req, res);
+        transformerPipelineWrapper = responseTransformerPipeline.createTransformStream(req, res);
         const resProxy = new Proxy<ServerResponse<Global>>(res, {
           get(target, p) {
             if (p === 'isProxy') {

@@ -7,7 +7,7 @@
 - 轻量级模块化设计
 - 基于路由的请求处理
 - 内置日志记录，使用 [@kuankuan/log-control](https://www.npmjs.com/package/@kuankuan/log-control)
-- 自动响应压缩
+- 可组合的响应转换器（自动压缩需显式启用）
 - 支持 TypeScript
 - 易于扩展和自定义
 
@@ -19,11 +19,15 @@ npm install @kuankuan/k-server
 
 ## 用法
 
+响应转换器需显式配置。若要启用自动响应压缩，请将 `AutoCompressTransformer` 添加到 `responseTransformers`。
+
 ```ts
 import { createServer, Router, restSender, Statue } from '@kuankuan/k-server';
 import logControl from '@kuankuan/log-control';
+import { AutoCompressTransformer } from '@kuankuan/k-server/transformers/autoCompress';
 
 const serverInstance = createServer({
+  responseTransformers: [new AutoCompressTransformer()],
   sender: restSender, // 设置响应发送器为 `restSender`（将以 REST 格式发送响应）
 });
 

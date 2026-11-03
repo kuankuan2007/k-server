@@ -7,7 +7,7 @@ A simple and easy-to-use server framework for Node.js.
 - Lightweight and modular design
 - Router-based request handling
 - Built-in logging with [@kuankuan/log-control](https://www.npmjs.com/package/@kuankuan/log-control)
-- Automatic response compression
+- Composable response transformers (automatic compression is opt-in)
 - TypeScript support
 - Easy to extend and customize
 
@@ -19,11 +19,15 @@ npm install @kuankuan/k-server
 
 ## Usage
 
+Response transformers are opt-in. Add `AutoCompressTransformer` to `responseTransformers` to enable automatic response compression.
+
 ```ts
 import { createServer, Router, restSender, Statue } from '@kuankuan/k-server';
 import logControl from '@kuankuan/log-control';
+import { AutoCompressTransformer } from '@kuankuan/k-server/transformers/autoCompress';
 
 const serverInstance = createServer({
+  responseTransformers: [new AutoCompressTransformer()],
   sender: restSender, // Set the response sender to `restSender` (it will send the response in REST format)
 });
 

@@ -1,7 +1,9 @@
 import { createServer, Router, Statue, restSender } from '../../src/index.js';
+import { AutoCompressTransformer } from '../../src/transformers/autoCompress.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
 const result = createServer({
+  responseTransformers: [new AutoCompressTransformer()],
   sender: restSender,
 });
 
