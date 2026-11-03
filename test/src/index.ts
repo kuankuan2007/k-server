@@ -94,6 +94,16 @@ result.routers.main.addRouter(
   })
 );
 
+result.routers.main.addRouter(
+  new Router({
+    matcher: 'now',
+    name: 'now',
+    onRootMatch: async (statue) => {
+      statue.ctx.data = new Date();
+    },
+  })
+);
+
 result.logApplication.addRecorder(
   new logControl.ConsoleRecorder({
     startLevel: logControl.Level.All,

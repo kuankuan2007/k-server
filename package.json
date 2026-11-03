@@ -20,7 +20,7 @@
     "eslint": "^10.14.0",
     "typedoc": "^0.28.7",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.37.0"
+    "typescript-eslint": "^8.72.1"
   },
   "dependencies": {
     "@kuankuan/log-control": "^0.2.3"
@@ -42,20 +42,19 @@
     "url": "https://github.com/kuankuan2007/k-server/issues"
   },
   "main": "dist/index.mjs",
-  "types": "types/index.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
-      "default": "./dist/index.mjs",
-      "types": "./dist/index.d.ts",
-      "iife": "./dist/index.iife.min.js"
+      "default": "./dist/index.mjs"
     },
     "./*": {
+      "types": "./dist/*.d.ts",
       "import": "./dist/*.mjs",
       "require": "./dist/*.cjs",
-      "default": "./dist/*.mjs",
-      "types": "./dist/*.d.ts"
+      "default": "./dist/*.mjs"
     }
   },
   "packageManager": "pnpm@12.5.1"

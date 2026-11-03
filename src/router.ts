@@ -34,6 +34,51 @@ export type RouterBaseConstructorOptions = {
   level?: number;
 };
 
+export async function executeRouter<Global = undefined>(
+  nowSubRouters: RouterMatchResult<Global>[],
+  req: ServerRequest<Global>,
+  res: ServerResponse<Global>,
+  ctx: ServerResponseCtx,
+  signal?: AbortSignal
+): Promise<void> {
+  async function _callExecutor(matchResult: RouterMatchResult<Global>) {
+    if (signal?.aborted) return;
+    req.logger.debug(
+      'execute - ' + matchResult.info.router.name + ' - ' + matchResult.info.matchType
+    );
+    let nextCalled = false;
+    const nowNext = () => {
+      nextCalled = true;
+      return _next();
+    };
+    const flags: RouterExecutorFlags = {};
+    await Promise.resolve(
+      matchResult.caller({ req, res, ctx, next: nowNext, routerInfo: matchResult.info, flags })
+    );
+    if (!nextCalled && !flags.termination && !signal?.aborted) {
+      return nowNext();
+    }
+  }
+  const _next = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        resolve();
+        return;
+      }
+      now++;
+      if (nowSubRouters.length <= now) {
+        resolve();
+        return;
+      } else {
+        _callExecutor(nowSubRouters[now]).then(resolve, reject);
+      }
+    });
+  };
+  let now = -1;
+  req.logger.debug('match finished. Start execute');
+  return _next();
+}
+
 export abstract class RouterBase<Global = undefined> {
   readonly name: string;
   readonly level: number;
@@ -43,46 +88,6 @@ export abstract class RouterBase<Global = undefined> {
   }
 
   abstract match(nowPath: string, req: ServerRequest<Global>): Promise<RouterMatchResult<Global>[]>;
-
-  async execute(
-    nowPath: string,
-    req: ServerRequest<Global>,
-    res: ServerResponse<Global>,
-    ctx: ServerResponseCtx
-  ): Promise<void> {
-    async function _callExecutor(matchResult: RouterMatchResult<Global>) {
-      req.logger.debug(
-        'execute - ' + matchResult.info.router.name + ' - ' + matchResult.info.matchType
-      );
-      let nextCalled = false;
-      const nowNext = () => {
-        nextCalled = true;
-        return _next();
-      };
-      const flags: RouterExecutorFlags = {};
-      await Promise.resolve(
-        matchResult.caller({ req, res, ctx, next: nowNext, routerInfo: matchResult.info, flags })
-      );
-      if (!nextCalled && !flags.termination) {
-        return nowNext();
-      }
-    }
-    const _next = () => {
-      return new Promise<void>((resolve, reject) => {
-        now++;
-        if (nowSubRouters.length <= now) {
-          resolve();
-          return;
-        } else {
-          _callExecutor(nowSubRouters[now]).then(resolve, reject);
-        }
-      });
-    };
-    const nowSubRouters = await this.match(nowPath, req);
-    let now = -1;
-    req.logger.debug('match finished. Start execute');
-    return _next();
-  }
 }
 
 export default class Router<Global = undefined> extends RouterBase<Global> {

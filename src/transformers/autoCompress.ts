@@ -1,6 +1,7 @@
 import { createGzip, createDeflate, createBrotliCompress, createZstdCompress } from 'zlib';
 import { Duplex } from 'stream';
 import { ServerRequest, ServerResponse, Transformer } from '@/types.js';
+import { TransformStreamWrapper } from '@/types.js';
 
 const defaultEncodeings = Object.assign(Object.create(null), {
   gzip: () => createGzip({ level: 6 }),
@@ -19,7 +20,7 @@ function createCompressor(encoding: string[]) {
   return void 0;
 }
 
-type EncodingGenerator<Global=undefined> = (
+type EncodingGenerator<Global = undefined> = (
   encoding: string[],
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
@@ -29,28 +30,36 @@ export default function getAutoCompress<Global = undefined>({
   level = -1,
   name = 'auto-compress',
   encodings = createCompressor,
-}: { level?: number; name?: string; encodings?: EncodingGenerator<Global> } = {}): Transformer<Global> {
+}: {
+  level?: number;
+  name?: string;
+  encodings?: EncodingGenerator<Global>;
+} = {}): Transformer<Global> {
   return {
     name,
     level,
     transformer(req, res) {
       if (res.needCompress === false) {
-        return void 0;
+        return new TransformStreamWrapper(void 0, () => {});
       }
       const acceptEncoding = (req.headers['accept-encoding'] || '')
         .split(',')
         .map((e) => e.trim())
         .filter((e) => e);
       if (!acceptEncoding.length) {
-        return void 0;
+        return new TransformStreamWrapper(void 0, () => {});
       }
       const result = encodings(acceptEncoding, req, res);
       if (!result) {
-        return void 0;
+        return new TransformStreamWrapper(void 0, () => {});
       }
       const { transformStream, encoding } = result;
       res.setHeader('Content-Encoding', encoding);
-      return transformStream;
+      return new TransformStreamWrapper(transformStream, () => {
+        if (!res.headersSent) {
+          res.removeHeader('Content-Encoding');
+        }
+      });
     },
   };
 }

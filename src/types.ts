@@ -16,6 +16,7 @@ export type ServerRequest<Global = undefined> = IncomingMessage & {
 };
 export type ServerResponse<Global = undefined> = SR & {
   needCompress?: boolean;
+  isProxy?: boolean;
   global: Global;
   logger: Logger;
 };
@@ -24,8 +25,24 @@ export type ServerResponseCtx = {
   data: unknown;
   statue: Statue;
 };
+export class TransformStreamWrapper {
+  readonly stream: Duplex | undefined;
+  readonly cancel: () => void;
+  constructor(stream: Duplex | undefined, cancel: () => void) {
+    this.stream = stream;
+    this.cancel = cancel;
+  }
+}
+export class TransformStreamPipelineWrapper {
+  readonly stream: Duplex;
+  readonly cancel: () => void;
+  constructor(stream: Duplex, cancel: () => void) {
+    this.stream = stream;
+    this.cancel = cancel;
+  }
+}
 export type Transformer<Global = undefined> = {
-  transformer: (req: ServerRequest<Global>, res: ServerResponse<Global>) => Duplex | void;
+  transformer: (req: ServerRequest<Global>, res: ServerResponse<Global>) => TransformStreamWrapper;
   name: string;
   level: number;
 };
@@ -44,7 +61,6 @@ export type RequestIdGenerator<Global = undefined> = (
 ) => string;
 export type ResponseSender<Global = undefined> = (
   ctx: ServerResponseCtx,
-  err: unknown | undefined,
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
-) => void;
+) => void | Promise<void>;

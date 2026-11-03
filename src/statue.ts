@@ -105,7 +105,7 @@ export class Statue {
   );
 
   static readonly SENDED = new Statue(-1, 'sended', false, () => {});
-  static readonly RAW_STREAM = new Statue(-2, 'raw stream', false, (ctx, _error, _req, res) => {
+  static readonly RAW_STREAM = new Statue(-2, 'raw stream', false, (ctx, _req, res) => {
     (ctx.data as Readable).pipe(res);
   });
 }
