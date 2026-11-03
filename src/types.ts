@@ -1,10 +1,9 @@
 import type { IncomingMessage, ServerResponse as SR } from 'http';
 import { Statue } from './statue.js';
 import { Duplex } from 'stream';
-import logControl, { Logger } from '@kuankuan/log-control';
+import type http from 'http';
+import type { Logger, Application } from '@kuankuan/log-control';
 
-export const logging = logControl;
-export type Logging = typeof logControl;
 export type ServerRequest<Global = undefined> = IncomingMessage & {
   ourl: URL;
   body: () => Promise<Uint8Array>;
@@ -64,3 +63,35 @@ export type ResponseSender<Global = undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
 ) => void | Promise<void>;
+
+export enum RequestErrorStage {
+  PREPARATION = 'PREPARATION',
+  TRANSFORM_STREAM_CREATE = 'TRANSFORM_STREAM_CREATE',
+  ROUTER_MATCH = 'ROUTER_MATCH',
+  ROUTER_EXECUTE = 'ROUTER_EXECUTE',
+  SEND = 'SEND',
+  TRANSFORM_STREAM = 'TRANSFORM_STREAM',
+  RESPONSE_STREAM = 'RESPONSE_STREAM',
+}
+export type GlobalSetter<Global = undefined> = (
+  req: ServerRequest<Global>,
+  res: ServerResponse<Global>
+) => Global;
+export type RequestErrorHandler<Global = undefined> = (
+  err: unknown,
+  stage: RequestErrorStage,
+  req: ServerRequest<Global>,
+  res: ServerResponse<Global>,
+  rawRes: ServerResponse<Global>,
+  ctx: ServerResponseCtx,
+  sender: ResponseSender<Global>
+) => void | Promise<void>;
+export type ServerOptions<Global extends object | undefined = undefined> = {
+  logApplication?: Application;
+  setGlobal?: GlobalSetter<Global>;
+  responseTransformers?: Transformer<Global>[];
+  server?: http.Server;
+  requestIdGenerator?: RequestIdGenerator<Global>;
+  sender?: ResponseSender<Global>;
+  errorHandler?: RequestErrorHandler<Global>;
+};

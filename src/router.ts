@@ -90,7 +90,7 @@ export abstract class RouterBase<Global = undefined> {
   abstract match(nowPath: string, req: ServerRequest<Global>): Promise<RouterMatchResult<Global>[]>;
 }
 
-export default class Router<Global = undefined> extends RouterBase<Global> {
+export class Router<Global = undefined> extends RouterBase<Global> {
   readonly name: string;
   readonly level: number;
 

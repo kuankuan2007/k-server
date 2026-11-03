@@ -1,8 +1,8 @@
-import { createServer, Router, Statue, restSender } from '../../src/index.js';
+import { KServer, Router, Statue, restSender } from '../../src/index.js';
 import { AutoCompressTransformer } from '../../src/transformers/autoCompress.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
-const result = createServer({
+const kServer = new KServer({
   responseTransformers: [new AutoCompressTransformer()],
   sender: restSender,
 });
@@ -11,7 +11,7 @@ const TEST_HOST = '127.0.0.1',
   TEST_PORT_START = 3000,
   TEST_PORT_END = 3020;
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     name: 'index',
     matcher: '',
@@ -23,7 +23,7 @@ result.routers.main.addRouter(
   })
 );
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: 'test',
     name: 'test',
@@ -33,7 +33,7 @@ result.routers.main.addRouter(
     },
   })
 );
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: '400',
     name: 'notFound',
@@ -44,7 +44,7 @@ result.routers.main.addRouter(
     },
   })
 );
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: '500',
     name: 'serverError',
@@ -55,7 +55,7 @@ result.routers.main.addRouter(
   })
 );
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: 'selfcontrol',
     name: 'selfcontrol',
@@ -70,7 +70,7 @@ result.routers.main.addRouter(
   })
 );
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: (nowPath) => {
       return nowPath === '/favicon.ico' || nowPath === '/icon' || nowPath === '/icon.jpg';
@@ -85,18 +85,18 @@ result.routers.main.addRouter(
   })
 );
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: 'bytes',
     name: 'bytes',
     onRootMatch: async (statue) => {
+      statue.req.logger.info('hello world from /bytes router');
       statue.ctx.data = new Uint8Array([75, 117, 97, 110, 107, 117, 97, 110]);
-      statue.ctx.statue = Statue.SENDED;
     },
   })
 );
 
-result.routers.main.addRouter(
+kServer.routers.main.addRouter(
   new Router({
     matcher: 'now',
     name: 'now',
@@ -106,35 +106,37 @@ result.routers.main.addRouter(
   })
 );
 
-result.logApplication.addRecorder(
+kServer.logApplication.addRecorder(
   new logControl.ConsoleRecorder({
     startLevel: logControl.Level.All,
   })
 );
 
-async function listen(server: typeof result.server, port: number) {
+async function tryToListen(server: KServer, port: number) {
   const { promise, resolve, reject } = Promise.withResolvers<void>();
-  server.once('error', reject);
-  server.once('listening', resolve);
+  server.httpServer.once('error', reject);
+  server.httpServer.once('listening', resolve);
   server.listen(port, TEST_HOST);
   return promise
     .then(() => {
       testLuncher.info(`Server is listening on ${TEST_HOST}:${port}`);
     })
     .finally(() => {
-      server.removeListener('error', reject);
-      server.removeListener('listening', resolve);
+      server.httpServer.removeListener('error', reject);
+      server.httpServer.removeListener('listening', resolve);
     });
 }
-const testLuncher = result.logApplication.createLogger('luncher');
+const testLuncher = kServer.logApplication.createLogger('luncher');
 (async () => {
   for (let i = TEST_PORT_START; i <= TEST_PORT_END; i++) {
     try {
       testLuncher.info(`try to listen ${i}`);
-      await listen(result.server, i);
+      await tryToListen(kServer, i);
       return;
     } catch (err) {
-      testLuncher.warn(`Can not listen ${i} port, Because: ${err instanceof Error ? err.message : String(err)}`);
+      testLuncher.warn(
+        `Can not listen ${i} port, Because: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
   testLuncher.fatal('Can not listen any port!');

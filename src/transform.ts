@@ -22,7 +22,11 @@ export class TransformerPipeline<Global = undefined> {
     const stream: Duplex = streamFinal.length ? compose(...streamFinal) : new PassThrough();
     return new TransformStreamPipelineWrapper(stream, function () {
       for (const s of streams) {
-        s.cancel();
+        try {
+          s.cancel();
+        } catch {
+          // ignore
+        }
       }
     });
   }
