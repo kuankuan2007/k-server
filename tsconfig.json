@@ -5,11 +5,12 @@
     "module": "nodenext",
     "lib": ["esnext"],
     "skipLibCheck": true,
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "dist",
     "declaration": true,
     "emitDeclarationOnly": true,
     "types": ["node"],
+    "declarationDir": "types",
 
     /* Bundler mode */
     "moduleResolution": "NodeNext",
@@ -26,5 +27,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

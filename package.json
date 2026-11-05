@@ -3,13 +3,13 @@
   "version": "2.0.0-beta.1",
   "description": "A simple and easy-to-use server framework for Node.js",
   "scripts": {
-    "build": "node tools/build.mjs",
+    "build": "rolldown -c rolldown.config.ts",
     "lint:fix": "eslint src/**/* --fix",
     "lint": "eslint src/**/*",
-    "test": "pnpm run build && node tools/test.mjs",
-    "format": "prettier --write src/",
-    "type-check": "tsc -p test/tsconfig.json",
-    "type-build": "tsc"
+    "test-build": "rolldown -c rolldown.config.test.ts",
+    "test": "pnpm run test-build && node ./test/dist/index.js",
+    "format": "prettier --write src/ test/",
+    "type-check": "tsc -p test/tsconfig.json"
   },
   "author": "kuankuan",
   "license": "MPL-2.0",
@@ -19,6 +19,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "prettier": "^3.9.10",
+    "rolldown": "^1.2.16",
     "typedoc": "^0.28.7",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"

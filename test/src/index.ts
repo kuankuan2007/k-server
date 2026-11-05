@@ -1,15 +1,21 @@
-import { KServer, Router, Statue , HTTPStatue, RESTSender } from '../../src/index.js';
+import { KServer, Router, Statue, HTTPStatue, RESTSender } from '../../src/index.js';
 import { AutoCompressTransformer } from '../../src/transformers/autoCompress.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
+import { parseArgs } from 'node:util';
+
+const args = parseArgs({
+  options: {
+    port: { type: 'string', default: '3000' },
+    host: { type: 'string', default: 'localhost' },
+  },
+});
+const port = parseInt(args.values.port || '3000');
+
 const kServer = new KServer({
   responseTransformers: [new AutoCompressTransformer()],
   sender: new RESTSender(),
 });
-
-const TEST_HOST = '127.0.0.1',
-  TEST_PORT_START = 3000,
-  TEST_PORT_END = 3020;
 
 kServer.routers.main.addRouter(
   new Router({
@@ -112,32 +118,14 @@ kServer.logApplication.addRecorder(
   })
 );
 
-async function tryToListen(server: KServer, port: number) {
-  const { promise, resolve, reject } = Promise.withResolvers<void>();
-  server.httpServer.once('error', reject);
-  server.httpServer.once('listening', resolve);
-  server.listen(port, TEST_HOST);
-  return promise
-    .then(() => {
-      testLuncher.info(`Server is listening on ${TEST_HOST}:${port}`);
-    })
-    .finally(() => {
-      server.httpServer.removeListener('error', reject);
-      server.httpServer.removeListener('listening', resolve);
-    });
-}
 const testLuncher = kServer.logApplication.createLogger('luncher');
-(async () => {
-  for (let i = TEST_PORT_START; i <= TEST_PORT_END; i++) {
-    try {
-      testLuncher.info(`try to listen ${i}`);
-      await tryToListen(kServer, i);
-      return;
-    } catch (err) {
-      testLuncher.warn(
-        `Can not listen ${i} port, Because: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-  }
-  testLuncher.fatal('Can not listen any port!');
-})();
+
+if (args.values.host) {
+  kServer.listen(port, args.values.host, () => {
+    testLuncher.info(`Server is listening on ${args.values.host}:${port}`);
+  });
+} else {
+  kServer.listen(port, () => {
+    testLuncher.info(`Server is listening on localhost:${port}`);
+  });
+}
