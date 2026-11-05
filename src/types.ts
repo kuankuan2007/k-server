@@ -3,6 +3,7 @@ import { Statue } from './statue.js';
 import { Duplex } from 'stream';
 import type http from 'http';
 import type { Logger, Application } from '@kuankuan/log-control';
+import type { TransformerPipeline } from './transform.js';
 
 export type ServerRequest<Global = undefined> = IncomingMessage & {
   ourl: URL;
@@ -92,7 +93,7 @@ export type RequestErrorHandler<Global extends object | undefined = undefined> =
 export type ServerOptions<Global extends object | undefined = undefined> = {
   logApplication?: Application;
   setGlobal?: GlobalSetter<Global>;
-  responseTransformers?: Transformer<Global>[];
+  responseTransformers?: Transformer<Global>[] | TransformerPipeline<Global>;
   server?: http.Server;
   requestIdGenerator?: RequestIdGenerator<Global>;
   sender?: ResponseSenderInterface<Global>;

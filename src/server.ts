@@ -36,9 +36,9 @@ export class KServer<Global extends object | undefined = undefined> {
   constructor(options: ServerOptions<Global> = {}) {
     this.httpServer = options.server ?? http.createServer();
     this.listen = this.httpServer.listen.bind(this.httpServer);
-    this.responseTransformerPipeline = new TransformerPipeline<Global>(
-      options.responseTransformers ?? []
-    );
+    this.responseTransformerPipeline = Array.isArray(options.responseTransformers)
+      ? new TransformerPipeline<Global>(options.responseTransformers)
+      : (options.responseTransformers ?? new TransformerPipeline<Global>([]));
 
     this.routers = {
       main: new Router<Global>({
