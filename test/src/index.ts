@@ -1,10 +1,10 @@
-import { KServer, Router, Statue, restSender } from '../../src/index.js';
+import { KServer, Router, Statue , HTTPStatue, RESTSender } from '../../src/index.js';
 import { AutoCompressTransformer } from '../../src/transformers/autoCompress.js';
 import fs from 'fs';
 import logControl from '@kuankuan/log-control';
 const kServer = new KServer({
   responseTransformers: [new AutoCompressTransformer()],
-  sender: restSender,
+  sender: new RESTSender(),
 });
 
 const TEST_HOST = '127.0.0.1',
@@ -39,7 +39,7 @@ kServer.routers.main.addRouter(
     name: 'notFound',
     onRootMatch: async (statue) => {
       statue.ctx.data = 'This is a 400 error';
-      statue.ctx.statue = Statue.NOT_FOUND;
+      statue.ctx.statue = HTTPStatue.NOT_FOUND;
       statue.req.logger.info('hello world from /400 router');
     },
   })

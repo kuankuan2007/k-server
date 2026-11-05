@@ -2,20 +2,20 @@ import type { ServerOptions } from './types.js';
 import { TransformerPipeline } from './transform.js';
 import logControl, { type Logger, Application } from '@kuankuan/log-control';
 import { Router } from './router.js';
-import { Statue } from './statue.js';
+import { HTTPStatue } from './statue.js';
 import getRandomId from './id.js';
 import { mergeUInt8Array } from './common.js';
 import { Writable } from 'stream';
 import { executeRouter } from './router.js';
 
 import http from 'http';
-import { bodyOnlySender } from './sender.js';
+import { BodyOnlySender } from './sender.js';
 import {
   ServerRequest,
   ServerResponse,
   ServerResponseCtx,
   RequestIdGenerator,
-  ResponseSender,
+  ResponseSenderInterface,
   RequestErrorHandler,
   GlobalSetter,
   TransformStreamPipelineWrapper,
@@ -29,7 +29,7 @@ export class KServer<Global extends object | undefined = undefined> {
   public readonly routers: { readonly main: Router<Global>; readonly root: Router<Global> };
   public readonly responseTransformerPipeline: TransformerPipeline<Global>;
   public readonly requestIdGenerator: RequestIdGenerator<Global>;
-  public readonly sender: ResponseSender<Global>;
+  public readonly sender: ResponseSenderInterface<Global>;
   public readonly logApplication: Application;
   protected readonly errorHandler: RequestErrorHandler<Global>;
   protected readonly setGlobal: GlobalSetter<Global>;
@@ -44,10 +44,10 @@ export class KServer<Global extends object | undefined = undefined> {
       main: new Router<Global>({
         name: 'main',
         onRootMatch: async (statue) => {
-          statue.ctx.statue = Statue.NOT_FOUND;
+          statue.ctx.statue = HTTPStatue.NOT_FOUND;
         },
         onNoMatch: async (statue) => {
-          statue.ctx.statue = Statue.NOT_FOUND;
+          statue.ctx.statue = HTTPStatue.NOT_FOUND;
         },
       }),
       root: new Router<Global>({
@@ -58,7 +58,7 @@ export class KServer<Global extends object | undefined = undefined> {
     this.httpServer.on('request', (req, res) => this.handleRequest(req, res));
     this.errorHandler = options.errorHandler ?? this.defaultErrorHandler.bind(this);
     this.requestIdGenerator = options.requestIdGenerator ?? getRandomId;
-    this.sender = options.sender ?? bodyOnlySender;
+    this.sender = options.sender ?? new BodyOnlySender();
     this.setGlobal = options.setGlobal ?? (() => void 0 as Global);
     this.logApplication = options.logApplication ?? new logControl.Application({ name: 'server' });
     this.loggers = {
@@ -72,21 +72,21 @@ export class KServer<Global extends object | undefined = undefined> {
     res: ServerResponse<Global>,
     rawRes: ServerResponse<Global>,
     ctx: ServerResponseCtx,
-    sender: ResponseSender<Global>
+    sender: ResponseSenderInterface<Global>
   ) {
     if (rawRes.headersSent || rawRes.destroyed) {
       rawRes.destroy();
       res.destroy();
       return;
     }
-    ctx.statue = Statue.INTERNAL_SERVER_ERROR;
+    ctx.statue = HTTPStatue.INTERNAL_SERVER_ERROR;
     ctx.data = void 0;
-    await sender(ctx, req, res);
+    await sender.send(ctx, req, res);
   }
   protected async handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
     const ctx: ServerResponseCtx = {
       data: void 0,
-      statue: new Statue(),
+      statue: new HTTPStatue(),
     };
     const rawRequest = req as ServerRequest<Global>;
     const rawResponse = res as ServerResponse<Global>;
@@ -229,7 +229,7 @@ export class KServer<Global extends object | undefined = undefined> {
 
       _stage = RequestErrorStage.SEND;
       const _sender = ctx.statue.specialSender || this.sender;
-      await _sender(ctx, rawRequest, proxiedResponse);
+      await _sender.send(ctx, rawRequest, proxiedResponse);
       if (abortController.signal.aborted) return;
 
       rawRequest.logger.info(`Request processing completed: ${ctx.statue.code} ${ctx.statue.msg}`);

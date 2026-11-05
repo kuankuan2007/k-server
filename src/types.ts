@@ -58,11 +58,14 @@ export type RequestIdGenerator<Global = undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
 ) => string;
-export type ResponseSender<Global = undefined> = (
-  ctx: ServerResponseCtx,
-  req: ServerRequest<Global>,
-  res: ServerResponse<Global>
-) => void | Promise<void>;
+
+export type ResponseSenderInterface<Global extends object | undefined = undefined> = {
+  send: (
+    ctx: ServerResponseCtx,
+    req: ServerRequest<Global>,
+    res: ServerResponse<Global>
+  ) => void | Promise<void>;
+};
 
 export enum RequestErrorStage {
   PREPARATION = 'PREPARATION',
@@ -73,18 +76,18 @@ export enum RequestErrorStage {
   TRANSFORM_STREAM = 'TRANSFORM_STREAM',
   RESPONSE_STREAM = 'RESPONSE_STREAM',
 }
-export type GlobalSetter<Global = undefined> = (
+export type GlobalSetter<Global extends object | undefined = undefined> = (
   req: ServerRequest<Global>,
   res: ServerResponse<Global>
 ) => Global;
-export type RequestErrorHandler<Global = undefined> = (
+export type RequestErrorHandler<Global extends object | undefined = undefined> = (
   err: unknown,
   stage: RequestErrorStage,
   req: ServerRequest<Global>,
   res: ServerResponse<Global>,
   rawRes: ServerResponse<Global>,
   ctx: ServerResponseCtx,
-  sender: ResponseSender<Global>
+  sender: ResponseSenderInterface<Global>
 ) => void | Promise<void>;
 export type ServerOptions<Global extends object | undefined = undefined> = {
   logApplication?: Application;
@@ -92,6 +95,6 @@ export type ServerOptions<Global extends object | undefined = undefined> = {
   responseTransformers?: Transformer<Global>[];
   server?: http.Server;
   requestIdGenerator?: RequestIdGenerator<Global>;
-  sender?: ResponseSender<Global>;
+  sender?: ResponseSenderInterface<Global>;
   errorHandler?: RequestErrorHandler<Global>;
 };

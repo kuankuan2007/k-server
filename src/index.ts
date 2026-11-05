@@ -1,7 +1,7 @@
 export { Router, matchTop } from './router.js';
 export * from './server.js';
-export { Statue } from './statue.js';
-export { bodyOnlySender, restSender } from './sender.js';
+export { Statue, HTTPStatue } from './statue.js';
+export { BodyOnlySender, RESTSender } from './sender.js';
 export { RequestErrorStage } from './types.js';
 export type {
   ServerOptions,
@@ -9,7 +9,7 @@ export type {
   ServerResponse,
   ServerResponseCtx,
   Transformer,
-  ResponseSender,
+  ResponseSenderInterface as ResponseSender,
   RequestIdGenerator,
   GlobalSetter,
   RequestErrorHandler,
