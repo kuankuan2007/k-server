@@ -1,5 +1,5 @@
 import { ResponseSenderInterface } from './types.js';
-import { StreamSender } from './sender.js';
+import { StreamSender, NoopSender } from './sender.js';
 
 export class Statue {
   readonly code: number;
@@ -19,8 +19,8 @@ export class Statue {
     this.ok = ok;
     this.specialSender = specialSender;
   }
-  static readonly SENDED = new Statue(-1, 'sended', false, { send: () => {} });
-  static readonly RAW_STREAM = new Statue(-2, 'raw stream', false, new StreamSender());
+  static readonly SENDED = new Statue(-1, 'sended', false, new StreamSender());
+  static readonly RAW_STREAM = new Statue(-2, 'raw stream', false, new NoopSender());
 }
 
 export class HTTPStatue extends Statue {

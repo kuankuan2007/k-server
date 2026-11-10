@@ -88,3 +88,10 @@ export class StreamSender<
     });
   }
 }
+export class NoopSender<
+  Global extends object | undefined = undefined,
+> extends ResponseSenderBase<Global> {
+  override send(): void | Promise<void> {
+    return Promise.resolve();
+  }
+}
